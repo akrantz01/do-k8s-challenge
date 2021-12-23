@@ -9,9 +9,8 @@ const region = config.require('region');
 
 // Create the cluster with its configuration
 const cluster = new Cluster('cluster', { nodeType, region });
-const kubeconfig = cluster.k8s.kubeConfigs.apply(
-  (configs) => configs[0].rawConfig,
-);
 
 // Create a Kubernetes provider that uses our cluster from above
-const clusterProvider = new KubernetesProvider('cluster', { kubeconfig });
+const clusterProvider = new KubernetesProvider('cluster', {
+  kubeconfig: cluster.kubeconfig,
+});

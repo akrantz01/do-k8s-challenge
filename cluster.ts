@@ -1,4 +1,9 @@
-import { ComponentResource, Inputs, ResourceOptions } from '@pulumi/pulumi';
+import {
+  ComponentResource,
+  Inputs,
+  Output,
+  ResourceOptions,
+} from '@pulumi/pulumi';
 import {
   KubernetesCluster,
   Vpc,
@@ -13,6 +18,7 @@ export interface Args {
 export class Cluster extends ComponentResource {
   readonly vpc: Vpc;
   readonly k8s: KubernetesCluster;
+  readonly kubeconfig: Output<string>;
 
   constructor(name: string, args: Args, opts?: ResourceOptions) {
     const inputs: Inputs = { options: opts };
@@ -53,5 +59,8 @@ export class Cluster extends ComponentResource {
       },
       defaultResourceOptions,
     );
+
+    // Extract the kubeconfig
+    this.kubeconfig = this.k8s.kubeConfigs.apply((k) => k[0].rawConfig);
   }
 }
