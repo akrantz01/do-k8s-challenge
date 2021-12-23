@@ -1,6 +1,8 @@
-import { ConfigFile } from '@pulumi/kubernetes/yaml';
 import { Release } from '@pulumi/kubernetes/helm/v3';
+import { ConfigFile } from '@pulumi/kubernetes/yaml';
 import { ComponentResource, ResourceOptions } from '@pulumi/pulumi';
+
+import { Listener } from './crds/getambassador/v3alpha1';
 
 /**
  * Arguments to Ambassador concerting which version is deployed
@@ -22,6 +24,8 @@ export interface InstallArgs {
 export class Ambassador extends ComponentResource {
   readonly crds: ConfigFile;
   readonly service: Release;
+  readonly listenerHttp: Listener;
+  readonly listenerHttps: Listener;
 
   /**
    * Deploy the Ambassador API gateway onto a cluster
@@ -65,6 +69,48 @@ export class Ambassador extends ComponentResource {
         },
       },
       { ...defaultResourceOptions, dependsOn: [this.crds] },
+    );
+
+    // Create HTTP/S listeners
+    this.listenerHttp = new Listener(
+      `${name}-http-8080`,
+      {
+        metadata: {
+          name: `${name}-http-8080`,
+          namespace,
+        },
+        spec: {
+          port: 8080,
+          protocol: 'HTTP',
+          securityModel: 'XFP',
+          hostBinding: {
+            namespace: {
+              from: 'ALL',
+            },
+          },
+        },
+      },
+      { ...defaultResourceOptions, dependsOn: [this.service] },
+    );
+    this.listenerHttps = new Listener(
+      `${name}-http-8443`,
+      {
+        metadata: {
+          name: `${name}-http-8443`,
+          namespace,
+        },
+        spec: {
+          port: 8443,
+          protocol: 'HTTPS',
+          securityModel: 'XFP',
+          hostBinding: {
+            namespace: {
+              from: 'ALL',
+            },
+          },
+        },
+      },
+      { ...defaultResourceOptions, dependsOn: [this.service] },
     );
   }
 }
