@@ -1,10 +1,15 @@
 import { ConfigFile } from '@pulumi/kubernetes/yaml';
+import { Release } from '@pulumi/kubernetes/helm/v3';
 import { ComponentResource, ResourceOptions } from '@pulumi/pulumi';
 
 /**
  * Arguments to Ambassador concerting which version is deployed
  */
-export interface Args {
+export interface InstallArgs {
+  /**
+   * The namespace to install into
+   */
+  namespace: string;
   /**
    * The Ambassador version to deploy
    */
@@ -16,7 +21,7 @@ export interface Args {
  */
 export class Ambassador extends ComponentResource {
   readonly crds: ConfigFile;
-  readonly service: ConfigFile;
+  readonly service: Release;
 
   /**
    * Deploy the Ambassador API gateway onto a cluster
@@ -24,7 +29,7 @@ export class Ambassador extends ComponentResource {
    * @param args The arguments to configure the cluster
    * @param opts A bag of options that control this resource's behavior
    */
-  constructor(name: string, args: Args, opts?: ResourceOptions) {
+  constructor(name: string, args: InstallArgs, opts?: ResourceOptions) {
     const inputs = { options: opts };
     super(
       'akrantz01:do-k8s-challenge:kubernetes:Ambassador',
@@ -33,7 +38,7 @@ export class Ambassador extends ComponentResource {
       opts,
     );
 
-    const { version } = args;
+    const { namespace, version } = args;
 
     // Automatically connect created resources with this module
     const defaultResourceOptions: ResourceOptions = { parent: this };
@@ -44,14 +49,20 @@ export class Ambassador extends ComponentResource {
       {
         file: `https://app.getambassador.io/yaml/edge-stack/${version}/aes-crds.yaml`,
       },
-      { ...defaultResourceOptions },
+      defaultResourceOptions,
     );
 
     // Deploy Ambassador
-    this.service = new ConfigFile(
+    this.service = new Release(
       'ambassador',
       {
-        file: `https://app.getambassador.io/yaml/edge-stack/${version}/aes.yaml`,
+        namespace: namespace,
+        createNamespace: true,
+        name: 'edge-stack',
+        chart: 'edge-stack',
+        repositoryOpts: {
+          repo: 'https://app.getambassador.io',
+        },
       },
       { ...defaultResourceOptions, dependsOn: [this.crds] },
     );
