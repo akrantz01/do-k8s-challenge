@@ -10,16 +10,37 @@ import {
   getKubernetesVersions,
 } from '@pulumi/digitalocean';
 
+/**
+ * Arguments to Cluster concerning how it is deployed
+ */
 export interface Args {
+  /**
+   * Where to deploy the cluster
+   */
   region: string;
+  /**
+   * What type of nodes to use in the node pool
+   */
   nodeType: string;
 }
 
+/**
+ * A Kubernetes cluster with a VPC
+ */
 export class Cluster extends ComponentResource {
+  // vpc is the VPC which the cluster will be attached to for all networking
   readonly vpc: Vpc;
+  // k8s is the fully configured cluster that was created
   readonly k8s: KubernetesCluster;
+  // kubeconfig is the configuration to connect to the cluster
   readonly kubeconfig: Output<string>;
 
+  /**
+   * Create a new cluster with a VPC
+   * @param name The __unique__ name of the resource
+   * @param args The arguments to configure the cluster
+   * @param opts A bag of options that control this resource's behavior
+   */
   constructor(name: string, args: Args, opts?: ResourceOptions) {
     const inputs: Inputs = { options: opts };
     super('akrantz01:do-k8s-challenge:Cluster', name, inputs, opts);
