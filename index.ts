@@ -1,5 +1,7 @@
 import { Provider as KubernetesProvider } from '@pulumi/kubernetes';
 import { Config } from '@pulumi/pulumi';
+
+import { Ambassador } from './ambassador';
 import { Cluster } from './cluster';
 
 // Pull the configuration values
@@ -14,3 +16,10 @@ const cluster = new Cluster('cluster', { nodeType, region });
 const clusterProvider = new KubernetesProvider('cluster', {
   kubeconfig: cluster.kubeconfig,
 });
+
+// Deploy Ambassador
+const ambassador = new Ambassador(
+  'ambassador',
+  { version: '2.1.0' },
+  { provider: clusterProvider },
+);
