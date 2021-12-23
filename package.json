@@ -3,7 +3,7 @@
     "scripts": {
         "up": "pulumi up",
         "down": "pulumi destroy",
-        "lint": "eslint . --ext .ts"
+        "lint": "eslint . --ext .ts --fix"
     },
     "devDependencies": {
         "@types/node": "^14",
