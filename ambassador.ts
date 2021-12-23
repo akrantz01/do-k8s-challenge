@@ -1,4 +1,3 @@
-import { Release } from '@pulumi/kubernetes/helm/v3';
 import { ConfigFile } from '@pulumi/kubernetes/yaml';
 import { ComponentResource, ResourceOptions } from '@pulumi/pulumi';
 
@@ -7,11 +6,7 @@ import { Listener } from './crds/getambassador/v3alpha1';
 /**
  * Arguments to Ambassador concerting which version is deployed
  */
-export interface InstallArgs {
-  /**
-   * The namespace to install into
-   */
-  namespace: string;
+export interface Args {
   /**
    * The Ambassador version to deploy
    */
@@ -23,7 +18,7 @@ export interface InstallArgs {
  */
 export class Ambassador extends ComponentResource {
   readonly crds: ConfigFile;
-  readonly service: Release;
+  readonly service: ConfigFile;
   readonly listenerHttp: Listener;
   readonly listenerHttps: Listener;
 
@@ -33,7 +28,7 @@ export class Ambassador extends ComponentResource {
    * @param args The arguments to configure the cluster
    * @param opts A bag of options that control this resource's behavior
    */
-  constructor(name: string, args: InstallArgs, opts?: ResourceOptions) {
+  constructor(name: string, args: Args, opts?: ResourceOptions) {
     const inputs = { options: opts };
     super(
       'akrantz01:do-k8s-challenge:kubernetes:Ambassador',
@@ -42,7 +37,7 @@ export class Ambassador extends ComponentResource {
       opts,
     );
 
-    const { namespace, version } = args;
+    const { version } = args;
 
     // Automatically connect created resources with this module
     const defaultResourceOptions: ResourceOptions = { parent: this };
@@ -53,20 +48,14 @@ export class Ambassador extends ComponentResource {
       {
         file: `https://app.getambassador.io/yaml/edge-stack/${version}/aes-crds.yaml`,
       },
-      defaultResourceOptions,
+      { ...defaultResourceOptions },
     );
 
     // Deploy Ambassador
-    this.service = new Release(
+    this.service = new ConfigFile(
       'ambassador',
       {
-        namespace: namespace,
-        createNamespace: true,
-        name: 'edge-stack',
-        chart: 'edge-stack',
-        repositoryOpts: {
-          repo: 'https://app.getambassador.io',
-        },
+        file: `https://app.getambassador.io/yaml/edge-stack/${version}/aes.yaml`,
       },
       { ...defaultResourceOptions, dependsOn: [this.crds] },
     );
@@ -77,7 +66,7 @@ export class Ambassador extends ComponentResource {
       {
         metadata: {
           name: `${name}-http-8080`,
-          namespace,
+          namespace: 'ambassador',
         },
         spec: {
           port: 8080,
@@ -97,7 +86,7 @@ export class Ambassador extends ComponentResource {
       {
         metadata: {
           name: `${name}-http-8443`,
-          namespace,
+          namespace: 'ambassador',
         },
         spec: {
           port: 8443,

@@ -20,6 +20,6 @@ const clusterProvider = new KubernetesProvider('cluster', {
 // Deploy Ambassador
 const ambassador = new Ambassador(
   'ambassador',
-  { namespace: 'ambassador', version: '2.1.0' },
+  { version: '2.1.0' },
   { provider: clusterProvider },
 );
