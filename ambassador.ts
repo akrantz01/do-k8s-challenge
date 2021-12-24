@@ -79,7 +79,7 @@ export class Ambassador extends ComponentResource {
                   'config.linkerd.io/skip-inbound-ports'
                 ] = '80,443';
                 obj.spec.template.metadata.annotations['linkerd.io/inject'] =
-                  'true';
+                  'enabled';
               }
             }
           },
