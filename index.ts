@@ -4,6 +4,7 @@ import { Config } from '@pulumi/pulumi';
 import { Ambassador } from './ambassador';
 import { Cluster } from './cluster';
 import { Linkerd } from './linkerd';
+import { CertManager } from './cert-manager';
 
 // Pull the configuration values
 const config = new Config();
@@ -30,4 +31,11 @@ const ambassador = new Ambassador(
   'ambassador',
   { version: '2.1.0', linkerd: true },
   { ...kubernetesOpts, dependsOn: linkerd.ready },
+);
+
+// Deploy cert-manager for TLS
+const certManager = new CertManager(
+  'cert-manager',
+  { version: 'v1.6.1' },
+  kubernetesOpts,
 );
