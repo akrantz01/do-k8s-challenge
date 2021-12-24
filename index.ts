@@ -23,12 +23,11 @@ const kubernetesOpts = {
 };
 
 // Deploy Linkerd 2 service mesh
-const linkerd = new Linkerd('linkerd', kubernetesOpts);
-export const exp = linkerd.expiration;
+const linkerd = new Linkerd('linkerd', { version: '2.11.1' }, kubernetesOpts);
 
 // Deploy Ambassador
-const ambassador = new Ambassador(
-  'ambassador',
-  { version: '2.1.0' },
-  kubernetesOpts,
-);
+// const ambassador = new Ambassador(
+//   'ambassador',
+//   { version: '2.1.0' },
+//   kubernetesOpts,
+// );
