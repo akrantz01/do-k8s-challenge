@@ -1,5 +1,9 @@
 import { ConfigFile } from '@pulumi/kubernetes/yaml';
-import { ComponentResource, ResourceOptions } from '@pulumi/pulumi';
+import {
+  ComponentResource,
+  CustomResourceOptions,
+  ResourceOptions,
+} from '@pulumi/pulumi';
 
 import { Listener } from './crds/getambassador/v3alpha1';
 
@@ -11,6 +15,10 @@ export interface Args {
    * The Ambassador version to deploy
    */
   version: string;
+  /**
+   * Whether to inject Linkerd 2
+   */
+  linkerd: boolean;
 }
 
 /**
@@ -37,7 +45,7 @@ export class Ambassador extends ComponentResource {
       opts,
     );
 
-    const { version } = args;
+    const { version, linkerd } = args;
 
     // Automatically connect created resources with this module
     const defaultResourceOptions: ResourceOptions = { parent: this };
@@ -56,6 +64,26 @@ export class Ambassador extends ComponentResource {
       'ambassador',
       {
         file: `https://app.getambassador.io/yaml/edge-stack/${version}/aes.yaml`,
+        transformations: [
+          // Optionally inject linkerd support based on https://www.getambassador.io/docs/edge-stack/latest/howtos/linkerd2/
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (obj: any) => {
+            if (linkerd) {
+              if (
+                obj.kind === 'Deployment' &&
+                obj.metadata &&
+                obj.metadata.name === 'edge-stack' &&
+                obj.metadata.namespace === 'ambassador'
+              ) {
+                obj.spec.template.metadata.annotations[
+                  'config.linkerd.io/skip-inbound-ports'
+                ] = '80,443';
+                obj.spec.template.metadata.annotations['linkerd.io/inject'] =
+                  'true';
+              }
+            }
+          },
+        ],
       },
       { ...defaultResourceOptions, dependsOn: [this.crds] },
     );

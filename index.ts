@@ -28,6 +28,6 @@ const linkerd = new Linkerd('linkerd', { version: '2.11.1' }, kubernetesOpts);
 // Deploy Ambassador
 const ambassador = new Ambassador(
   'ambassador',
-  { version: '2.1.0' },
+  { version: '2.1.0', linkerd: true },
   { ...kubernetesOpts, dependsOn: linkerd.ready },
 );
