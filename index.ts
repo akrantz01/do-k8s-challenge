@@ -142,6 +142,7 @@ new Mapping(
   {
     metadata: {
       name: 'linkerd2-qotm',
+      namespace: namespaceName,
     },
     spec: {
       hostname: '*',
