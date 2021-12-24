@@ -40,7 +40,7 @@ const namespace = new Namespace(
   'testing-namespace',
   {
     metadata: {
-      name: 'default',
+      name: 'qotm',
       annotations: {
         'linkerd.io/inject': 'enabled',
       },
@@ -49,12 +49,13 @@ const namespace = new Namespace(
   { ...kubernetesOpts, dependsOn: [ambassador] },
 );
 
+const namespaceName = namespace.metadata.apply((m) => m.name);
 const deployment = new Deployment(
   'testing-deployment',
   {
     metadata: {
       name: 'qotm',
-      namespace: 'default',
+      namespace: namespaceName,
     },
     spec: {
       replicas: 1,
@@ -118,7 +119,7 @@ const service = new Service(
   {
     metadata: {
       name: 'qotm-linkerd2',
-      namespace: 'default',
+      namespace: namespaceName,
     },
     spec: {
       ports: [
