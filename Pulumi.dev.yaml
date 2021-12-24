@@ -1,5 +1,5 @@
 config:
   digitalocean:token:
-    secure: AAABAGNcRELWcvTowM2s/wpveREFN7Gt5lSb//GMmJz6kqCgTJM2R1gyYHcOsOA2qKvErv7a25dblnd/PdwVvoXt1ASf/LF/PX14xi2GmpTlQQY6kdXVgAsXJV11l9rW
+    secure: AAABAJKtc6UI3DfG30V7QfyXplFFR8xeY4FuW1isbcVibv/EZrGKP4GaHn9YtuOMWsdGnzRuHGtpgp+r0R0hL0kbwVdpA8z+k70S/SzXXMI8aKf7dL0X8zFnX37WRz4j
   do-k8s-challenge:node-type: s-2vcpu-4gb
   do-k8s-challenge:region: sfo2

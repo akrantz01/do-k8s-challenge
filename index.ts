@@ -21,5 +21,5 @@ const clusterProvider = new KubernetesProvider('cluster', {
 const ambassador = new Ambassador(
   'ambassador',
   { version: '2.1.0' },
-  { provider: clusterProvider },
+  { provider: clusterProvider, dependsOn: [clusterProvider] },
 );
