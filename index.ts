@@ -3,6 +3,7 @@ import { Config } from '@pulumi/pulumi';
 
 import { Ambassador } from './ambassador';
 import { Cluster } from './cluster';
+import { Linkerd } from './linkerd';
 
 // Pull the configuration values
 const config = new Config();
@@ -16,10 +17,18 @@ const cluster = new Cluster('cluster', { nodeType, region });
 const clusterProvider = new KubernetesProvider('cluster', {
   kubeconfig: cluster.kubeconfig,
 });
+const kubernetesOpts = {
+  provider: clusterProvider,
+  dependsOn: [clusterProvider],
+};
+
+// Deploy Linkerd 2 service mesh
+const linkerd = new Linkerd('linkerd', kubernetesOpts);
+export const exp = linkerd.expiration;
 
 // Deploy Ambassador
 const ambassador = new Ambassador(
   'ambassador',
   { version: '2.1.0' },
-  { provider: clusterProvider, dependsOn: [clusterProvider] },
+  kubernetesOpts,
 );
