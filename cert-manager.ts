@@ -1,12 +1,8 @@
-import { Namespace } from '@pulumi/kubernetes/core/v1';
+import { Namespace, Secret } from '@pulumi/kubernetes/core/v1';
 import { Release } from '@pulumi/kubernetes/helm/v3';
 import { ConfigFile } from '@pulumi/kubernetes/yaml';
-import {
-  ComponentResource,
-  CustomResource,
-  Output,
-  ResourceOptions,
-} from '@pulumi/pulumi';
+import { ComponentResource, Output, ResourceOptions } from '@pulumi/pulumi';
+import { ClusterIssuer } from './crds/certmanager/v1';
 
 /**
  * Arguments to define how cert-manager is installed
@@ -16,6 +12,14 @@ export interface Args {
    * The cert-manager version to install
    */
   version: string;
+  /**
+   * The email to use for certificate expiry notifications
+   */
+  email: string;
+  /**
+   * Cloudflare API key for DNS verification
+   */
+  cloudflareToken: Output<string>;
 }
 
 /**
@@ -25,6 +29,8 @@ export class CertManager extends ComponentResource {
   readonly crds: ConfigFile;
   readonly namespace: Namespace;
   readonly release: Release;
+  readonly secret: Secret;
+  readonly issuer: ClusterIssuer;
 
   /**
    * Deploy cert-manager onto a cluster
@@ -41,7 +47,7 @@ export class CertManager extends ComponentResource {
       opts,
     );
 
-    const { version } = args;
+    const { version, email, cloudflareToken } = args;
 
     // Automatically connect created resources with this module
     const defaultResourceOptions: ResourceOptions = { parent: this };
@@ -65,6 +71,7 @@ export class CertManager extends ComponentResource {
       },
       defaultResourceOptions,
     );
+    const namespaceName = this.namespace.metadata.apply((m) => m.name);
 
     // Deploy the helm chart
     this.release = new Release(
@@ -72,12 +79,65 @@ export class CertManager extends ComponentResource {
       {
         chart: 'cert-manager',
         version,
-        namespace: this.namespace.metadata.apply((m) => m.name),
+        namespace: namespaceName,
         repositoryOpts: {
           repo: 'https://charts.jetstack.io',
         },
       },
       { ...defaultResourceOptions, dependsOn: [this.crds] },
+    );
+
+    // Create a secret for the Cloudflare API key
+    this.secret = new Secret(
+      `${name}-cloudflare-api-token`,
+      {
+        type: 'Opaque',
+        stringData: {
+          apiKey: cloudflareToken,
+        },
+        metadata: {
+          name: `${name}-cloudflare-api-token`,
+          namespace: namespaceName,
+        },
+      },
+      defaultResourceOptions,
+    );
+
+    // Install the cluster issuer
+    this.issuer = new ClusterIssuer(
+      `${name}-issuer`,
+      {
+        metadata: {
+          name: `${name}-issuer`,
+        },
+        spec: {
+          acme: {
+            email,
+            server: 'https://acme-v02.api.letsencrypt.org/directory',
+            privateKeySecretRef: {
+              name: `${name}-issuer-secret`,
+            },
+            solvers: [
+              {
+                selector: {},
+                dns01: {
+                  cloudflare: {
+                    email,
+                    apiTokenSecretRef: {
+                      name: this.secret.metadata.apply((m) => m.name),
+                      key: 'apiKey',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        ...defaultResourceOptions,
+        dependsOn: [this.crds, this.release, this.secret],
+      },
     );
   }
 }

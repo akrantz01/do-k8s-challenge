@@ -8,6 +8,8 @@ import { CertManager } from './cert-manager';
 
 // Pull the configuration values
 const config = new Config();
+const cloudflareToken = config.requireSecret('acme.cloudflare.token');
+const email = config.require('acme.email');
 const nodeType = config.get('nodeType') || 's-2vcpu-4gb';
 const region = config.require('region');
 
@@ -36,6 +38,6 @@ const ambassador = new Ambassador(
 // Deploy cert-manager for TLS
 const certManager = new CertManager(
   'cert-manager',
-  { version: 'v1.6.1' },
+  { version: 'v1.6.1', email, cloudflareToken },
   kubernetesOpts,
 );
