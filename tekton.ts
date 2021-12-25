@@ -6,6 +6,8 @@ import { ComponentResource, ResourceOptions } from '@pulumi/pulumi';
  */
 export class Tekton extends ComponentResource {
   readonly core: ConfigFile;
+  readonly triggers: ConfigFile;
+  readonly interceptors: ConfigFile;
 
   constructor(name: string, opts?: ResourceOptions) {
     const inputs = { options: opts };
@@ -35,6 +37,22 @@ export class Tekton extends ComponentResource {
         ],
       },
       defaultResourceOptions,
+    );
+
+    // Install Tekton Triggers and the interceptors
+    this.triggers = new ConfigFile(
+      `${name}-triggers`,
+      {
+        file: 'https://storage.googleapis.com/tekton-releases/triggers/latest/release.yaml',
+      },
+      { ...defaultResourceOptions, dependsOn: this.core.ready },
+    );
+    this.interceptors = new ConfigFile(
+      `${name}-interceptors`,
+      {
+        file: 'https://storage.googleapis.com/tekton-releases/triggers/latest/interceptors.yaml',
+      },
+      { ...defaultResourceOptions, dependsOn: this.triggers.ready },
     );
   }
 }
