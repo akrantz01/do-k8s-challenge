@@ -60,7 +60,7 @@ export class Tekton extends ComponentResource {
     this.dashboard = new ConfigFile(
       `${name}-dashboard`,
       {
-        file: 'https://github.com/tektoncd/dashboard/releases/download/v0.23.0/openshift-tekton-dashboard-release.yaml',
+        file: 'https://github.com/tektoncd/dashboard/releases/download/v0.23.0/tekton-dashboard-release.yaml',
       },
       { ...defaultResourceOptions, dependsOn: this.interceptors.ready },
     );
