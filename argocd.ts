@@ -63,6 +63,15 @@ export class ArgoCD extends ComponentResource {
         namespace: namespaceName,
         createNamespace: true,
         dependencyUpdate: true,
+        values: {
+          'argo-cd': {
+            server: {
+              config: {
+                url: `https://${domain}`,
+              },
+            },
+          },
+        },
       },
       { ...defaultResourceOptions, dependsOn: [this.namespace] },
     );
