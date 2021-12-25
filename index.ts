@@ -66,7 +66,11 @@ const certificate = new Certificate(
 );
 
 // Install ArgoCD onto the cluster
-new ArgoCD('argo-cd', {
-  ...kubernetesOpts,
-  dependsOn: [certificate],
-});
+new ArgoCD(
+  'argo-cd',
+  { domain: `argo.${baseDomain}` },
+  {
+    ...kubernetesOpts,
+    dependsOn: [certificate, ambassador],
+  },
+);
