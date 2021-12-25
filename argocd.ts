@@ -67,7 +67,7 @@ export class ArgoCD extends ComponentResource {
           },
           requestPolicy: {
             insecure: {
-              action: 'Redirect',
+              action: 'Reject',
             },
           },
           acmeProvider: {
