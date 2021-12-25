@@ -23,6 +23,7 @@ export class Tekton extends ComponentResource {
       {
         file: 'https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.30.0/release.yaml',
         transformations: [
+          // Configure the artifact storage volume
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (obj: any) => {
             if (
@@ -33,6 +34,18 @@ export class Tekton extends ComponentResource {
               if (!obj.data) obj.data = {};
               obj.data.size = '10Gi';
               obj.data.storageClassName = 'do-block-storage';
+            }
+          },
+          // Inject linkerd into the namespace
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (obj: any) => {
+            if (
+              obj.kind === 'Namespace' &&
+              obj.metadata &&
+              obj.metadata.name === 'tekton-pipelines'
+            ) {
+              if (!obj.metadata.annotations) obj.metadata.annotations = {};
+              obj.metadata.annotations['linkerd.io/inject'] = 'enabled';
             }
           },
         ],
