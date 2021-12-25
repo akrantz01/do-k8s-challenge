@@ -6,6 +6,7 @@ import { Cluster } from './cluster';
 import { Linkerd } from './linkerd';
 import { ArgoCD } from './argocd';
 import { Tekton } from './tekton';
+import { Host, Mapping } from './crds/getambassador/v3alpha1';
 
 // Pull the configuration values
 const config = new Config();
@@ -34,6 +35,53 @@ const ambassador = new Ambassador(
   'ambassador',
   { version: '2.1.0', linkerd: true },
   { ...kubernetesOpts, dependsOn: linkerd.ready },
+);
+
+// Expose the Linkerd dashboard
+new Host(
+  'linkerd-viz-host',
+  {
+    metadata: {
+      name: 'linkerd-viz-host',
+      namespace: 'linkerd-viz',
+    },
+    spec: {
+      hostname: `linkerd.${baseDomain}`,
+      mappingSelector: {
+        matchLabels: {
+          host: 'linkerd-viz',
+        },
+      },
+      requestPolicy: {
+        insecure: {
+          action: 'Redirect',
+        },
+      },
+      acmeProvider: {
+        email,
+      },
+    },
+  },
+  { ...kubernetesOpts, dependsOn: [ambassador] },
+);
+new Mapping(
+  'linkerd-viz-mapping',
+  {
+    metadata: {
+      name: 'linkerd-viz-mapping',
+      namespace: 'linkerd-viz',
+      labels: {
+        host: 'linkerd-viz',
+      },
+    },
+    spec: {
+      host: `linkerd.${baseDomain}`,
+      prefix: '/',
+      service: 'web.linkerd-viz.svc.cluster.local:8084',
+      host_rewrite: 'web.linkerd-viz.svc.cluster.local:8084',
+    },
+  },
+  { ...kubernetesOpts, dependsOn: [ambassador] },
 );
 
 // Install ArgoCD onto the cluster
