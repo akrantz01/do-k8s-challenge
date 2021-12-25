@@ -72,14 +72,23 @@ export class Ambassador extends ComponentResource {
               if (
                 obj.kind === 'Deployment' &&
                 obj.metadata &&
-                obj.metadata.name === 'edge-stack' &&
                 obj.metadata.namespace === 'ambassador'
               ) {
-                obj.spec.template.metadata.annotations[
-                  'config.linkerd.io/skip-inbound-ports'
-                ] = '80,443';
+                if (!obj.spec.template.metadata.annotations)
+                  obj.spec.template.metadata.annotations = {};
                 obj.spec.template.metadata.annotations['linkerd.io/inject'] =
                   'enabled';
+
+                // Special handling for edge-stack and edge-stack-redis deployments
+                if (obj.metadata.name === 'edge-stack') {
+                  obj.spec.template.metadata.annotations[
+                    'config.linkerd.io/skip-inbound-ports'
+                  ] = '80,443';
+                } else if (obj.metadata.name === 'edge-stack-redis') {
+                  obj.spec.template.metadata.annotations[
+                    'config.linkerd.io/opaque-ports'
+                  ] = '6379';
+                }
               }
             }
           },
