@@ -1,3 +1,4 @@
+import { Namespace } from '@pulumi/kubernetes/core/v1';
 import { Release } from '@pulumi/kubernetes/helm/v3';
 import {
   ComponentResource,
@@ -24,6 +25,7 @@ export interface Args {
  * Deploy ArgoCD onto the cluster
  */
 export class ArgoCD extends ComponentResource {
+  readonly namespace: Namespace;
   readonly release: Release;
   readonly host: Host;
   readonly uiRoute: Mapping;
@@ -38,16 +40,31 @@ export class ArgoCD extends ComponentResource {
 
     const { domain, email } = args;
 
+    // Create namespace with Linkerd auto-injection
+    this.namespace = new Namespace(
+      `${name}-ns`,
+      {
+        metadata: {
+          name: 'argo-cd',
+          annotations: {
+            'linkerd.io/inject': 'enabled',
+          },
+        },
+      },
+      defaultResourceOptions,
+    );
+    const namespaceName = this.namespace.metadata.apply((m) => m.name);
+
     // Install Argo-CD
     this.release = new Release(
       name,
       {
         chart: './argo-cd',
-        namespace: 'argo-cd',
+        namespace: namespaceName,
         createNamespace: true,
         dependencyUpdate: true,
       },
-      defaultResourceOptions,
+      { ...defaultResourceOptions, dependsOn: [this.namespace] },
     );
 
     // Register the domain with Ambassador
@@ -56,7 +73,7 @@ export class ArgoCD extends ComponentResource {
       {
         metadata: {
           name: `${name}-host`,
-          namespace: 'argo-cd',
+          namespace: namespaceName,
         },
         spec: {
           hostname: domain,
@@ -85,7 +102,7 @@ export class ArgoCD extends ComponentResource {
       {
         metadata: {
           name: `${name}-ui`,
-          namespace: 'argo-cd',
+          namespace: namespaceName,
           labels: {
             host: name,
           },
@@ -104,7 +121,7 @@ export class ArgoCD extends ComponentResource {
       {
         metadata: {
           name: `${name}-cli`,
-          namespace: 'argo-cd',
+          namespace: namespaceName,
           labels: {
             host: name,
           },
