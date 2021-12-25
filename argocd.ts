@@ -4,8 +4,7 @@ import {
   ResourceOptions,
   interpolate,
 } from '@pulumi/pulumi';
-import { Mapping } from './crds/getambassador/v3alpha1';
-import { Service } from '@pulumi/kubernetes/core/v1';
+import { Host, Mapping } from './crds/getambassador/v3alpha1';
 
 /**
  * Arguments for deploying ArgoCD
@@ -15,6 +14,10 @@ export interface Args {
    * The domain to route traffic to
    */
   domain: string;
+  /**
+   * The email for ACME certificate generation
+   */
+  email: string;
 }
 
 /**
@@ -22,6 +25,7 @@ export interface Args {
  */
 export class ArgoCD extends ComponentResource {
   readonly release: Release;
+  readonly host: Host;
   readonly uiRoute: Mapping;
   readonly cliRoute: Mapping;
 
@@ -32,7 +36,7 @@ export class ArgoCD extends ComponentResource {
     // Automatically connect created resources with this module
     const defaultResourceOptions: ResourceOptions = { parent: this };
 
-    const { domain } = args;
+    const { domain, email } = args;
 
     // Install Argo-CD
     this.release = new Release(
@@ -46,6 +50,34 @@ export class ArgoCD extends ComponentResource {
       defaultResourceOptions,
     );
 
+    // Register the domain with Ambassador
+    this.host = new Host(
+      `${name}-host`,
+      {
+        metadata: {
+          name: `${name}-host`,
+          namespace: 'argo-cd',
+        },
+        spec: {
+          hostname: domain,
+          mappingSelector: {
+            matchLabels: {
+              host: name,
+            },
+          },
+          requestPolicy: {
+            insecure: {
+              action: 'Redirect',
+            },
+          },
+          acmeProvider: {
+            email,
+          },
+        },
+      },
+      defaultResourceOptions,
+    );
+
     // Enable routing to Argo-CD
     const serviceName = interpolate`${this.release.name}-argocd-server.${this.release.namespace}:443`;
     this.uiRoute = new Mapping(
@@ -54,6 +86,9 @@ export class ArgoCD extends ComponentResource {
         metadata: {
           name: `${name}-ui`,
           namespace: 'argo-cd',
+          labels: {
+            host: name,
+          },
         },
         spec: {
           host: domain,
@@ -61,7 +96,7 @@ export class ArgoCD extends ComponentResource {
           service: serviceName,
         },
       },
-      { ...defaultResourceOptions, dependsOn: [this.release] },
+      { ...defaultResourceOptions, dependsOn: [this.host, this.release] },
     );
     this.cliRoute = new Mapping(
       `${name}-cli`,
@@ -69,6 +104,9 @@ export class ArgoCD extends ComponentResource {
         metadata: {
           name: `${name}-cli`,
           namespace: 'argo-cd',
+          labels: {
+            host: name,
+          },
         },
         spec: {
           host: `${domain}:443`,
@@ -76,7 +114,7 @@ export class ArgoCD extends ComponentResource {
           service: serviceName,
         },
       },
-      { ...defaultResourceOptions, dependsOn: [this.release] },
+      { ...defaultResourceOptions, dependsOn: [this.host, this.release] },
     );
   }
 }

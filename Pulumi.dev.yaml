@@ -1,9 +1,7 @@
 config:
   digitalocean:token:
     secure: AAABAJKtc6UI3DfG30V7QfyXplFFR8xeY4FuW1isbcVibv/EZrGKP4GaHn9YtuOMWsdGnzRuHGtpgp+r0R0hL0kbwVdpA8z+k70S/SzXXMI8aKf7dL0X8zFnX37WRz4j
-  do-k8s-challenge:acme.cloudflare.token:
-    secure: AAABABDlVB+/UmQvNFA/lnFM8H+9CYxXdQLrnCITqZFPzfj1FZ2GgRK0mZkvxuoRQGgIaVJZA80yJehlJockvNgwVJ00KC5Q
+  do-k8s-challenge:acme.domain: do-k8s.krantz.dev
   do-k8s-challenge:acme.email: alex@krantz.dev
-  do-k8s-challenge:baseDomain: do-k8s.krantz.dev
   do-k8s-challenge:node-type: s-2vcpu-4gb
   do-k8s-challenge:region: sfo2
