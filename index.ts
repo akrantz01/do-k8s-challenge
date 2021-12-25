@@ -6,6 +6,7 @@ import { CertManager } from './cert-manager';
 import { Cluster } from './cluster';
 import { Certificate } from './crds/certmanager/v1';
 import { Linkerd } from './linkerd';
+import { ArgoCD } from './argocd';
 
 // Pull the configuration values
 const config = new Config();
@@ -45,7 +46,7 @@ const certManager = new CertManager(
 );
 
 // Create a certificate for all the base applications
-new Certificate(
+const certificate = new Certificate(
   'ambassador-certificate',
   {
     metadata: {
@@ -63,3 +64,9 @@ new Certificate(
   },
   { ...kubernetesOpts, dependsOn: [ambassador, certManager] },
 );
+
+// Install ArgoCD onto the cluster
+new ArgoCD('argo-cd', {
+  ...kubernetesOpts,
+  dependsOn: [certificate],
+});
