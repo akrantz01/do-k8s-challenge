@@ -8,6 +8,7 @@ export class Tekton extends ComponentResource {
   readonly core: ConfigFile;
   readonly triggers: ConfigFile;
   readonly interceptors: ConfigFile;
+  readonly dashboard: ConfigFile;
 
   constructor(name: string, opts?: ResourceOptions) {
     const inputs = { options: opts };
@@ -20,7 +21,7 @@ export class Tekton extends ComponentResource {
     this.core = new ConfigFile(
       `${name}-core`,
       {
-        file: 'https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml',
+        file: 'https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.30.0/release.yaml',
         transformations: [
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (obj: any) => {
@@ -43,16 +44,25 @@ export class Tekton extends ComponentResource {
     this.triggers = new ConfigFile(
       `${name}-triggers`,
       {
-        file: 'https://storage.googleapis.com/tekton-releases/triggers/latest/release.yaml',
+        file: 'https://storage.googleapis.com/tekton-releases/triggers/previous/v0.17.1/release.yaml',
       },
       { ...defaultResourceOptions, dependsOn: this.core.ready },
     );
     this.interceptors = new ConfigFile(
       `${name}-interceptors`,
       {
-        file: 'https://storage.googleapis.com/tekton-releases/triggers/latest/interceptors.yaml',
+        file: 'https://storage.googleapis.com/tekton-releases/triggers/previous/v0.17.1/interceptors.yaml',
       },
       { ...defaultResourceOptions, dependsOn: this.triggers.ready },
+    );
+
+    // Install the Tekton dashboard
+    this.dashboard = new ConfigFile(
+      `${name}-dashboard`,
+      {
+        file: 'https://github.com/tektoncd/dashboard/releases/download/v0.23.0/openshift-tekton-dashboard-release.yaml',
+      },
+      { ...defaultResourceOptions, dependsOn: this.interceptors.ready },
     );
   }
 }
