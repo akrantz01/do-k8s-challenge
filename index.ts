@@ -5,6 +5,7 @@ import { Ambassador } from './ambassador';
 import { Cluster } from './cluster';
 import { Linkerd } from './linkerd';
 import { ArgoCD } from './argocd';
+import { Tekton } from './tekton';
 
 // Pull the configuration values
 const config = new Config();
@@ -44,3 +45,6 @@ new ArgoCD(
     dependsOn: [ambassador],
   },
 );
+
+// Install Tekton onto the cluster
+new Tekton('tekton', kubernetesOpts);
