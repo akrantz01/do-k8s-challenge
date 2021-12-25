@@ -1,4 +1,4 @@
-import { Release } from '@pulumi/kubernetes/helm/v3';
+import { Chart, Release } from '@pulumi/kubernetes/helm/v3';
 import { ComponentResource, ResourceOptions } from '@pulumi/pulumi';
 
 /**
@@ -20,6 +20,7 @@ export class ArgoCD extends ComponentResource {
         chart: './argo-cd',
         namespace: 'argo-cd',
         createNamespace: true,
+        dependencyUpdate: true,
       },
       defaultResourceOptions,
     );
