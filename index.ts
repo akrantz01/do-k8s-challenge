@@ -47,4 +47,8 @@ new ArgoCD(
 );
 
 // Install Tekton onto the cluster
-new Tekton('tekton', kubernetesOpts);
+new Tekton(
+  'tekton',
+  { domain: `tekton.${baseDomain}`, email },
+  { ...kubernetesOpts, dependsOn: [ambassador] },
+);

@@ -1,5 +1,20 @@
 import { ConfigFile } from '@pulumi/kubernetes/yaml';
 import { ComponentResource, ResourceOptions } from '@pulumi/pulumi';
+import { Host, Mapping } from './crds/getambassador/v3alpha1';
+
+/**
+ * Arguments for deploying Tekton
+ */
+export interface Args {
+  /**
+   * The domain to route traffic to
+   */
+  domain: string;
+  /**
+   * The email for ACME certificate generation
+   */
+  email: string;
+}
 
 /**
  * Install Tekton CD to the cluster
@@ -10,12 +25,17 @@ export class Tekton extends ComponentResource {
   readonly interceptors: ConfigFile;
   readonly dashboard: ConfigFile;
 
-  constructor(name: string, opts?: ResourceOptions) {
+  readonly host: Host;
+  readonly mapping: Mapping;
+
+  constructor(name: string, args: Args, opts?: ResourceOptions) {
     const inputs = { options: opts };
     super('akrantz01:do-k8s-challenge:kubernetes:Tekton', name, inputs, opts);
 
     // Automatically connect created resources with this module
     const defaultResourceOptions: ResourceOptions = { parent: this };
+
+    const { domain, email } = args;
 
     // Install the core components
     this.core = new ConfigFile(
@@ -76,6 +96,55 @@ export class Tekton extends ComponentResource {
         file: 'https://github.com/tektoncd/dashboard/releases/download/v0.23.0/tekton-dashboard-release.yaml',
       },
       { ...defaultResourceOptions, dependsOn: this.interceptors.ready },
+    );
+
+    // Register the domain with Ambassador
+    this.host = new Host(
+      `${name}-host`,
+      {
+        metadata: {
+          name: `${name}-host`,
+          namespace: 'tekton-pipelines',
+        },
+        spec: {
+          hostname: domain,
+          mappingSelector: {
+            matchLabels: {
+              host: name,
+            },
+          },
+          requestPolicy: {
+            insecure: {
+              action: 'Redirect',
+            },
+          },
+          acmeProvider: {
+            email,
+          },
+        },
+      },
+      defaultResourceOptions,
+    );
+
+    // Enable routing to Tekton Dashboard
+    this.mapping = new Mapping(
+      `${name}-mapping`,
+      {
+        metadata: {
+          name: `${name}-mapping`,
+          namespace: 'tekton-pipelines',
+          labels: {
+            host: name,
+          },
+        },
+        spec: {
+          host: domain,
+          prefix: '/',
+          service: 'http://tekton-dashboard.tekton-pipelines',
+          rewrite: '',
+        },
+      },
+      { ...defaultResourceOptions, dependsOn: [this.host, this.dashboard] },
     );
   }
 }
