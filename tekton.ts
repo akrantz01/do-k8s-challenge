@@ -19,6 +19,20 @@ export class Tekton extends ComponentResource {
       `${name}-core`,
       {
         file: 'https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml',
+        transformations: [
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (obj: any) => {
+            if (
+              obj.kind === 'ConfigMap' &&
+              obj.metadata &&
+              obj.metadata.name === 'config-artifact-pvc'
+            ) {
+              if (!obj.data) obj.data = {};
+              obj.data.size = '10Gi';
+              obj.data.storageClassName = 'do-block-storage';
+            }
+          },
+        ],
       },
       defaultResourceOptions,
     );
