@@ -45,3 +45,6 @@ new ArgoCD(
     dependsOn: [ambassador],
   },
 );
+
+// Install Tekton onto the cluster
+new Tekton('tekton', kubernetesOpts);
