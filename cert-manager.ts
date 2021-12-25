@@ -32,6 +32,8 @@ export class CertManager extends ComponentResource {
   readonly secret: Secret;
   readonly issuer: ClusterIssuer;
 
+  readonly issuerName: Output<string>;
+
   /**
    * Deploy cert-manager onto a cluster
    * @param name The __unique__ name of the resource
@@ -139,5 +141,6 @@ export class CertManager extends ComponentResource {
         dependsOn: [this.crds, this.release, this.secret],
       },
     );
+    this.issuerName = this.issuer.metadata.apply((m) => <string>m?.name);
   }
 }
