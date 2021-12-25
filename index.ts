@@ -34,13 +34,3 @@ const ambassador = new Ambassador(
   { version: '2.1.0', linkerd: true },
   { ...kubernetesOpts, dependsOn: linkerd.ready },
 );
-
-// Install ArgoCD onto the cluster
-new ArgoCD(
-  'argo-cd',
-  { domain: `argo.${baseDomain}`, email },
-  {
-    ...kubernetesOpts,
-    dependsOn: [ambassador],
-  },
-);
