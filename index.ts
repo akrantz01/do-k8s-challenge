@@ -11,6 +11,7 @@ import { Host, Mapping } from './crds/getambassador/v3alpha1';
 // Pull the configuration values
 const config = new Config();
 const baseDomain = config.require('acme.domain');
+const cloudConnectToken = config.getSecret('cloudConnectToken');
 const email = config.require('acme.email');
 const nodeType = config.get('nodeType') || 's-2vcpu-4gb';
 const region = config.require('region');
@@ -33,7 +34,7 @@ const linkerd = new Linkerd('linkerd', { version: '2.11.1' }, kubernetesOpts);
 // Deploy Ambassador
 const ambassador = new Ambassador(
   'ambassador',
-  { version: '2.1.0', linkerd: true },
+  { version: '2.1.0', linkerd: true, cloudConnectToken },
   { ...kubernetesOpts, dependsOn: linkerd.ready },
 );
 

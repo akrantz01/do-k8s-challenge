@@ -1,9 +1,6 @@
+import { ConfigMap } from '@pulumi/kubernetes/core/v1';
 import { ConfigFile } from '@pulumi/kubernetes/yaml';
-import {
-  ComponentResource,
-  CustomResourceOptions,
-  ResourceOptions,
-} from '@pulumi/pulumi';
+import { ComponentResource, Output, ResourceOptions } from '@pulumi/pulumi';
 
 import { Listener } from './crds/getambassador/v3alpha1';
 
@@ -19,6 +16,10 @@ export interface Args {
    * Whether to inject Linkerd 2
    */
   linkerd: boolean;
+  /**
+   * The token to connect to Ambassador Cloud
+   */
+  cloudConnectToken?: string | Output<string>;
 }
 
 /**
@@ -45,7 +46,7 @@ export class Ambassador extends ComponentResource {
       opts,
     );
 
-    const { version, linkerd } = args;
+    const { version, linkerd, cloudConnectToken } = args;
 
     // Automatically connect created resources with this module
     const defaultResourceOptions: ResourceOptions = { parent: this };
@@ -96,6 +97,22 @@ export class Ambassador extends ComponentResource {
       },
       { ...defaultResourceOptions, dependsOn: [this.crds] },
     );
+
+    if (cloudConnectToken) {
+      new ConfigMap(
+        `${name}-cloud-token`,
+        {
+          metadata: {
+            name: 'edge-stack-agent-cloud-token',
+            namespace: 'ambassador',
+          },
+          data: {
+            CLOUD_CONNECT_TOKEN: cloudConnectToken,
+          },
+        },
+        { ...defaultResourceOptions, dependsOn: [this.service] },
+      );
+    }
 
     // Create HTTP/S listeners
     this.listenerHttp = new Listener(
